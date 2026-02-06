@@ -1,0 +1,123 @@
+======================================================================
+REDUNDANCY ANALYSIS SUMMARY
+======================================================================
+Method: Sentence-BERT (Reimers & Gurevych, 2019)
+Threshold: 0.35
+======================================================================
+
+Total items: 877
+FACETS-60 items: 60
+Non-FACETS items: 817
+
+Items redundant with FACETS (>=0.35): 825 (94.1%)
+Items redundant with non-FACETS (>=0.35): 876 (99.9%)
+
+----------------------------------------------------------------------
+BREAKDOWN BY SOURCE
+----------------------------------------------------------------------
+
+Claude Opus 4.5:
+  Total items: 124
+  Redundant with FACETS: 121 (97.6%)
+  Redundant with non-FACETS: 124 (100.0%)
+  Avg FACETS similarity: 0.565
+  Avg non-FACETS similarity: 0.884
+
+Clinical scales:
+  Total items: 105
+  Redundant with FACETS: 103 (98.1%)
+  Redundant with non-FACETS: 105 (100.0%)
+  Avg FACETS similarity: 0.581
+  Avg non-FACETS similarity: 0.878
+
+FACETS-60:
+  Total items: 60
+  Redundant with FACETS: 55 (91.7%)
+  Redundant with non-FACETS: 59 (98.3%)
+  Avg FACETS similarity: 0.508
+  Avg non-FACETS similarity: 0.684
+
+Frameworks:
+  Total items: 516
+  Redundant with FACETS: 478 (92.6%)
+  Redundant with non-FACETS: 516 (100.0%)
+  Avg FACETS similarity: 0.507
+  Avg non-FACETS similarity: 0.740
+
+GPT 5.2 Thinking:
+  Total items: 60
+  Redundant with FACETS: 57 (95.0%)
+  Redundant with non-FACETS: 60 (100.0%)
+  Avg FACETS similarity: 0.478
+  Avg non-FACETS similarity: 0.776
+
+Gemini 3 Pro:
+  Total items: 12
+  Redundant with FACETS: 11 (91.7%)
+  Redundant with non-FACETS: 12 (100.0%)
+  Avg FACETS similarity: 0.483
+  Avg non-FACETS similarity: 0.908
+
+----------------------------------------------------------------------
+TOP 10 ITEMS MOST SIMILAR TO FACETS-60
+----------------------------------------------------------------------
+  Self-Confidence (Claude Opus 4.5)
+    -> Self-Confidence (0.963)
+  Academic Motivation (Claude Opus 4.5)
+    -> Academic Motivation (0.957)
+  empathy (Frameworks)
+    -> Empathy (0.930)
+  stress management (Frameworks)
+    -> Stress Management (0.921)
+  Self-Confidence (Claude Opus 4.5)
+    -> Self-Confidence (0.916)
+  Self-Confidence (Claude Opus 4.5)
+    -> Self-Confidence (0.905)
+  self-confidence (Frameworks)
+    -> Self-Confidence (0.903)
+  Empathy (Claude Opus 4.5)
+    -> Empathy (0.902)
+  Anger Management (Clinical scales)
+    -> Anger Management (0.886)
+  Social Engagement (Clinical scales)
+    -> Social Engagement (0.885)
+
+----------------------------------------------------------------------
+TOP 10 ITEMS MOST SIMILAR TO OTHER NON-FACETS
+----------------------------------------------------------------------
+  child manages emotions with increasing independence (Frameworks)
+    -> child manages emotions with increasing independence (1.000)
+  child manages emotions with increasing independence (Frameworks)
+    -> child manages emotions with increasing independence (1.000)
+  Material Management (Claude Opus 4.5)
+    -> Material Management (0.994)
+  Material Management (Claude Opus 4.5)
+    -> Material Management (0.994)
+  relationship skills (Frameworks)
+    -> relationship skills (0.991)
+  relationship skills (Frameworks)
+    -> relationship skills (0.991)
+  Aggression (Clinical scales)
+    -> Aggression (0.990)
+  Aggression (Clinical scales)
+    -> Aggression (0.990)
+  Impulse Control (Clinical scales)
+    -> Impulse Control (0.987)
+  Impulse Control (Claude Opus 4.5)
+    -> Impulse Control (0.987)
+
+======================================================================
+METHODOLOGY NOTE
+======================================================================
+Similarity computed using Sentence-BERT embeddings (all-mpnet-base-v2).
+Reference: Reimers, N., & Gurevych, I. (2019). Sentence-BERT:
+  Sentence Embeddings using Siamese BERT-Networks. EMNLP-IJCNLP.
+Threshold: 0.35
+
+Columns added:
+  - Max FACETS similarity value: Maximum similarity to any FACETS-60 item
+  - Max FACETS similarity: Subcategory with maximum FACETS similarity
+  - Max non-FACETS similarity value: Maximum similarity to any non-FACETS item
+  - Max non-FACETS similarity: Subcategory with maximum non-FACETS similarity
+  - Redundant FACETS: 'Yes' if max FACETS similarity >= threshold
+  - Redundant non-FACETS: 'Yes' if max non-FACETS similarity >= threshold
