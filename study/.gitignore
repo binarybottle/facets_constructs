@@ -1,32 +1,14 @@
-# macOS / editors
-.DS_Store
-#*
-.#*
-.vscode/
-.vscode-test
-.idea/
+# Sensitive
+token.json
 
-# Python
-__pycache__/
-*.py[cod]
-*.so
-*.egg-info/
-*.egg
-.pytest_cache/
-.ipynb_checkpoints
-.ruff_cache
-.mypy_cache/
-.coverage
-coverage.xml
-*.cover
-.venv
-venv/
-build/
+# Build output
 dist/
 
-# Node / JavaScript
+# Dependencies
 node_modules/
 package-lock.json
+
+# TypeScript / bundler caches
 *.tsbuildinfo
 .npm
 .yarn/cache
@@ -43,8 +25,10 @@ pnpm-debug.log*
 .env
 .env.*
 
-# Sensitive
-token.json
+# macOS / editors
+.DS_Store
+.vscode/
+.vscode-test
 
 # Temporary project files
 src/configs/
