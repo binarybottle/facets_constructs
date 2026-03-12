@@ -8,17 +8,17 @@ const jsPsych = initJsPsych();
 
 // Experiment configuration
 let experimentConfig = {
-  numTrials: 100,  // Number of forced-choice pairs to present
-  itemsFile: 'data/items.csv',  // CSV with Items, Synonym 1, Synonym 2, Synonym 3
-  // Attention checks: ~1 every 5 min if ~50 screens between checks
+  termsPerParticipant: 26,        // K constructs assigned per participant; determines C(K,2) pairs
+  subsetsFile: 'data/subsets.json', // Pre-generated balanced subset assignments
+  // Attention checks: 1 per ~55 screens ≈ every 5 min at 3.5s/trial
   attentionCheckPairs: [
     ['Paying attention', 'Continuing to stop'],
-    ['Respect for others ', 'Reading the drivel'],
+    ['Respect for others',  'Reading the drivel'],
     ['Playing with others', 'Receptive unfamiliar'],
-    ['Managing emotions', 'Learning the fatigue'],
-    ['Social skills', 'Learning unuseless'],
-  ],  // Each pair is [correctWord, distractorWord]; one pair is chosen at random per check
-  screensBetweenAttentionChecks: 50,  // Number of main (forced-choice) trials between attention checks
+    ['Managing emotions',   'Learning the fatigue'],
+    ['Social skills',       'Learning unuseless'],
+  ],
+  screensBetweenAttentionChecks: 55,
 };
 
 // OSF and server configuration
@@ -29,6 +29,9 @@ const PROLIFIC_COMPLETION_URL = "https://app.prolific.com/submissions/complete?c
 const COMPLETION_CODE          = "C1NWOX09";  // Completed normally
 const NO_CONSENT_CODE          = "C1O763HF";  // Did not consent
 const FAILED_ATTENTION_CODE    = "CNI9G3A4";  // Failed an attention check
+
+// Assigned subset index for this participant (set in runExperiment)
+let assignedSubsetIndex = -1;
 
 // Get Prolific ID from URL parameters
 let prolificID = '';
@@ -60,96 +63,47 @@ async function loadOSFToken() {
   }
 }
 
-// Load items from CSV file
-async function loadItems(filename) {
+// Load the pre-generated subsets file
+async function loadSubsets(filename) {
   try {
     const response = await fetch(`./${filename}`);
-    const csvText = await response.text();
-    const lines = csvText.split('\n').map(row => row.trim()).filter(row => row);
-    
-    // Skip header row
-    const dataLines = lines.slice(1);
-    
-    const items = [];
-    const allTerms = []; // All items + all synonyms for random selection
-    
-    dataLines.forEach((line, index) => {
-      // Parse CSV properly handling quoted fields
-      const cols = line.match(/(".*?"|[^,]+)(?=\s*,|\s*$)/g) || [];
-      const cleanCols = cols.map(c => c.replace(/^"(.*)"$/, '$1').trim());
-      
-      const item = cleanCols[0] || '';
-      const syn1 = cleanCols[1] || '';
-      const syn2 = cleanCols[2] || '';
-      const syn3 = cleanCols[3] || '';
-      
-      if (item) {
-        items.push({
-          name: item,
-          synonyms: [syn1, syn2, syn3].filter(s => s)
-        });
-        
-        // Add item and all its synonyms to the pool
-        allTerms.push({ term: item, isItem: true, sourceItem: item });
-        if (syn1) allTerms.push({ term: syn1, isItem: false, sourceItem: item });
-        if (syn2) allTerms.push({ term: syn2, isItem: false, sourceItem: item });
-        if (syn3) allTerms.push({ term: syn3, isItem: false, sourceItem: item });
-      }
-    });
-    
-    console.log(`Loaded ${items.length} items with ${allTerms.length} total terms`);
-    return { items, allTerms };
+    const data = await response.json();
+    console.log(`Loaded ${data.subsets.length} subsets (k=${data.meta.k_per_participant})`);
+    return data;
   } catch (error) {
     console.error(`Error loading ${filename}:`, error);
-    return { items: [], allTerms: [] };
+    return null;
   }
 }
 
-// Generate random pairs for the experiment
-function generateRandomPairs(items, allTerms, numPairs) {
+// Hash a string to an integer index in [0, n)
+// Uses djb2 XOR variant — well-distributed for arbitrary strings
+function hashStringToIndex(str, n) {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = (((hash << 5) + hash) ^ str.charCodeAt(i)) & 0x7fffffff;
+  }
+  return hash % n;
+}
+
+// Generate all C(k,2) pairs from the assigned terms, in random order.
+// Each term object: { term, constructIndex, canonical, isSynonym, synonymIndex }
+function generateAllPairs(assignedTerms) {
   const pairs = [];
-  const usedPairs = new Set();
-  
-  for (let i = 0; i < numPairs; i++) {
-    let attempts = 0;
-    let validPair = false;
-    
-    while (!validPair && attempts < 100) {
-      attempts++;
-      
-      // Pick a random item
-      const item1 = items[Math.floor(Math.random() * items.length)];
-      
-      // Pick a random term (could be another item or any synonym, including from same source)
-      // Just exclude the exact same term
-      const eligibleTerms = allTerms.filter(t => t.term !== item1.name);
-      if (eligibleTerms.length === 0) continue;
-      
-      const term2 = eligibleTerms[Math.floor(Math.random() * eligibleTerms.length)];
-      
-      // Create a unique key for this pair (order-independent)
-      const pairKey = [item1.name, term2.term].sort().join('|||');
-      
-      if (!usedPairs.has(pairKey)) {
-        usedPairs.add(pairKey);
-        
-        // Randomize left/right position
-        if (Math.random() < 0.5) {
-          pairs.push({
-            left: { term: item1.name, isItem: true, sourceItem: item1.name },
-            right: term2
-          });
-        } else {
-          pairs.push({
-            left: term2,
-            right: { term: item1.name, isItem: true, sourceItem: item1.name }
-          });
-        }
-        validPair = true;
-      }
+  for (let i = 0; i < assignedTerms.length; i++) {
+    for (let j = i + 1; j < assignedTerms.length; j++) {
+      // Randomise left/right position
+      const [left, right] = Math.random() < 0.5
+        ? [assignedTerms[i], assignedTerms[j]]
+        : [assignedTerms[j], assignedTerms[i]];
+      pairs.push({ left, right });
     }
   }
-  
+  // Fisher-Yates shuffle
+  for (let i = pairs.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pairs[i], pairs[j]] = [pairs[j], pairs[i]];
+  }
   return pairs;
 }
 
@@ -566,7 +520,7 @@ const consentTrial = {
           <dd style='margin-left: 0; margin-bottom: 8px;'>Before the main task, you will be asked a few brief background questions about your teaching experience. Then you will be presented with pairs of student qualities (such as "Self-Control" vs. "Empathy") and asked to choose which of the two you consider to be a more relevant and important characteristic of students with whom you work. We value your experience and are interested in your considered professional judgment about each pair.</dd>
 
           <dt style='font-weight: bold; margin-top: 10px;'>Duration</dt>
-          <dd style='margin-left: 0; margin-bottom: 8px;'>This study takes approximately 5-10 minutes to complete.</dd>
+          <dd style='margin-left: 0; margin-bottom: 8px;'>This study takes approximately 20 minutes to complete.</dd>
 
                     <dt style='font-weight: bold; margin-top: 10px;'>Risks</dt>
           <dd style='margin-left: 0; margin-bottom: 8px;'>There are no anticipated risks or discomforts from this research.</dd>
@@ -623,24 +577,33 @@ function createChoiceTrial(pair, trialIndex, totalTrials) {
       updateProgressCounter(trialIndex + 1, totalTrials);
     },
     on_finish: function(data) {
-      const chosenIndex = data.response;
-      const chosen = chosenIndex === 0 ? pair.left : pair.right;
-      const unchosen = chosenIndex === 0 ? pair.right : pair.left;
-      
-      data.task = 'forced_choice';
-      data.trial_index = trialIndex;
-      data.left_term = pair.left.term;
-      data.left_is_item = pair.left.isItem;
-      data.left_source = pair.left.sourceItem;
-      data.right_term = pair.right.term;
-      data.right_is_item = pair.right.isItem;
-      data.right_source = pair.right.sourceItem;
-      data.chosen_term = chosen.term;
-      data.chosen_is_item = chosen.isItem;
-      data.chosen_source = chosen.sourceItem;
-      data.unchosen_term = unchosen.term;
-      data.unchosen_is_item = unchosen.isItem;
-      data.unchosen_source = unchosen.sourceItem;
+      const chosen   = data.response === 0 ? pair.left : pair.right;
+      const unchosen = data.response === 0 ? pair.right : pair.left;
+
+      data.task         = 'forced_choice';
+      data.trial_index  = trialIndex;
+      data.subset_index = assignedSubsetIndex;
+
+      data.left_term          = pair.left.term;
+      data.left_construct_id  = pair.left.constructIndex;
+      data.left_canonical     = pair.left.canonical;
+      data.left_is_synonym    = pair.left.isSynonym;
+
+      data.right_term         = pair.right.term;
+      data.right_construct_id = pair.right.constructIndex;
+      data.right_canonical    = pair.right.canonical;
+      data.right_is_synonym   = pair.right.isSynonym;
+
+      data.chosen_term          = chosen.term;
+      data.chosen_construct_id  = chosen.constructIndex;
+      data.chosen_canonical     = chosen.canonical;
+      data.chosen_is_synonym    = chosen.isSynonym;
+
+      data.unchosen_term          = unchosen.term;
+      data.unchosen_construct_id  = unchosen.constructIndex;
+      data.unchosen_canonical     = unchosen.canonical;
+      data.unchosen_is_synonym    = unchosen.isSynonym;
+
       data.response_time = data.rt;
     }
   };
@@ -712,28 +675,28 @@ const thankYouTrial = {
 // Convert data to CSV format
 function convertToCSV(data) {
   const headers = [
-    'user_id', 'task', 'trial_index',
-    'left_term', 'left_is_item', 'left_source',
-    'right_term', 'right_is_item', 'right_source',
-    'chosen_term', 'chosen_is_item', 'chosen_source',
-    'unchosen_term', 'unchosen_is_item', 'unchosen_source',
+    'user_id', 'task', 'trial_index', 'subset_index',
+    'left_term',    'left_construct_id',    'left_canonical',    'left_is_synonym',
+    'right_term',   'right_construct_id',   'right_canonical',   'right_is_synonym',
+    'chosen_term',  'chosen_construct_id',  'chosen_canonical',  'chosen_is_synonym',
+    'unchosen_term','unchosen_construct_id','unchosen_canonical','unchosen_is_synonym',
     'response_time',
     'correct_word', 'chosen_word', 'passed',
     'grade_levels', 'special_needs', 'school_type', 'experience', 'class_size', 'country'
   ];
 
-  const q = s => `"${(s || '').toString().replace(/"/g, '""')}"`;
+  const q = s => `"${(s ?? '').toString().replace(/"/g, '""')}"`;
 
   let content = headers.join(',') + '\n';
 
   data.forEach(trial => {
     if (trial.task === 'forced_choice') {
       const row = [
-        prolificID, 'forced_choice', trial.trial_index,
-        q(trial.left_term), trial.left_is_item, q(trial.left_source),
-        q(trial.right_term), trial.right_is_item, q(trial.right_source),
-        q(trial.chosen_term), trial.chosen_is_item, q(trial.chosen_source),
-        q(trial.unchosen_term), trial.unchosen_is_item, q(trial.unchosen_source),
+        prolificID, 'forced_choice', trial.trial_index, trial.subset_index,
+        q(trial.left_term),    trial.left_construct_id,    q(trial.left_canonical),    trial.left_is_synonym,
+        q(trial.right_term),   trial.right_construct_id,   q(trial.right_canonical),   trial.right_is_synonym,
+        q(trial.chosen_term),  trial.chosen_construct_id,  q(trial.chosen_canonical),  trial.chosen_is_synonym,
+        q(trial.unchosen_term),trial.unchosen_construct_id,q(trial.unchosen_canonical),trial.unchosen_is_synonym,
         trial.response_time,
         '', '', '',
         '', '', '', '', '', ''
@@ -741,9 +704,8 @@ function convertToCSV(data) {
       content += row.join(',') + '\n';
     } else if (trial.task === 'attention_check') {
       const row = [
-        prolificID, 'attention_check', trial.trial_index,
-        '', '', '', '', '', '',
-        '', '', '', '', '', '',
+        prolificID, 'attention_check', trial.trial_index, '',
+        '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
         trial.response_time,
         q(trial.correct_word), q(trial.chosen_word), trial.passed,
         '', '', '', '', '', ''
@@ -751,9 +713,8 @@ function convertToCSV(data) {
       content += row.join(',') + '\n';
     } else if (trial.task === 'demographics') {
       const row = [
-        prolificID, 'demographics', '',
-        '', '', '', '', '', '',
-        '', '', '', '', '', '',
+        prolificID, 'demographics', '', '',
+        '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
         '',
         '', '', '',
         q(trial.grade_levels), q(trial.special_needs), q(trial.school_type),
@@ -858,22 +819,36 @@ function endExperimentFailed() {
 // Main experiment function
 async function runExperiment(options = {}) {
   Object.assign(experimentConfig, options);
-  
+
   setGlobalStyles();
   createProgressCounter();
   hideProgressCounter();
-  
-  // Load items
-  const { items, allTerms } = await loadItems(experimentConfig.itemsFile);
-  
-  if (items.length === 0) {
-    jsPsych.endExperiment('Error loading items');
+
+  // Load pre-generated subsets
+  const subsetsData = await loadSubsets(experimentConfig.subsetsFile);
+  if (!subsetsData || !subsetsData.subsets.length) {
+    jsPsych.endExperiment('Error loading subsets');
     return;
   }
-  
-  // Generate random pairs
-  const pairs = generateRandomPairs(items, allTerms, experimentConfig.numTrials);
-  console.log(`Generated ${pairs.length} pairs for experiment`);
+
+  // Assign this participant to a subset via PID hash
+  const n = subsetsData.subsets.length;
+  assignedSubsetIndex = hashStringToIndex(prolificID === 'unknown' ? String(Date.now()) : prolificID, n);
+  const rawSubset = subsetsData.subsets[assignedSubsetIndex];
+  console.log(`Participant assigned subset ${assignedSubsetIndex} of ${n}`);
+
+  // Convert subset entries to the term objects used by generateAllPairs
+  const assignedTerms = rawSubset.map(entry => ({
+    term:           entry.term,
+    constructIndex: entry.construct_index,
+    canonical:      entry.canonical_item,
+    isSynonym:      entry.is_synonym,
+    synonymIndex:   entry.synonym_index,
+  }));
+
+  // Generate all C(k,2) pairs in random order
+  const pairs = generateAllPairs(assignedTerms);
+  console.log(`Generated ${pairs.length} pairs for experiment (k=${assignedTerms.length})`);
 
   const attentionCheckPairs = experimentConfig.attentionCheckPairs || [];
   const screensBetween = experimentConfig.screensBetweenAttentionChecks ?? 60;
@@ -951,7 +926,4 @@ async function runExperiment(options = {}) {
 }
 
 // Start the experiment
-runExperiment({
-  numTrials: experimentConfig.numTrials,
-  itemsFile: experimentConfig.itemsFile
-});
+runExperiment();

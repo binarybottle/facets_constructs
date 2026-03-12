@@ -20,18 +20,24 @@ Visit the URL shown (e.g., `http://localhost:8082/...`) to preview.
 Build locally, then upload static files (no Node.js needed on server):
 
 ```bash
-# 1. Build locally
+# First-time setup: create the directory and upload data/token
+export STUDY='binarybottle@arnoklein.info:/home/binarybottle/arnoklein.info/facets/facets_study'
+ssh binarybottle@arnoklein.info "mkdir -p ${STUDY#*:}"
+scp token.json $STUDY/
+scp -r data $STUDY/
+```
+
+```bash
+# Regenerate subsets (run whenever items.csv or k/n parameters change)
 cd /Users/arno/Software/facets_constructs/study
-npm run build
+python3 generate_subsets.py --k 26 --n 400
+scp data/subsets.json binarybottle@arnoklein.info:/home/binarybottle/arnoklein.info/facets/facets_study/data/
+```
 
-# 2. Set remote path
-export STUDY='/home/binarybottle/arnoklein.info/facets/facets_study'
-
-# 3. Create directory and upload
-ssh binarybottle@arnoklein.info "mkdir -p $STUDY"
-scp -r dist/* binarybottle@arnoklein.info:$STUDY/
-scp token.json binarybottle@arnoklein.info:$STUDY/
-scp -r data binarybottle@arnoklein.info:$STUDY/
+```bash
+# Every code deploy: build and upload (run from the study/ directory)
+cd /Users/arno/Software/facets_constructs/study
+npm run build && ssh binarybottle@arnoklein.info "rm -rf /home/binarybottle/arnoklein.info/facets/facets_study/assets" && scp -r dist/* binarybottle@arnoklein.info:/home/binarybottle/arnoklein.info/facets/facets_study/
 ```
 
 ## Vite Configuration
