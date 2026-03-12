@@ -10,7 +10,7 @@ const jsPsych = initJsPsych();
 let experimentConfig = {
   numTrials: 100,  // Number of forced-choice pairs to present
   itemsFile: 'data/items.csv',  // CSV with Items, Synonym 1, Synonym 2, Synonym 3
-  // Attention checks: ~1 every 5 min if ~60 screens between checks
+  // Attention checks: ~1 every 5 min if ~50 screens between checks
   attentionCheckPairs: [
     ['Paying attention', 'Continuing to stop'],
     ['Respect for others ', 'Reading the drivel'],
@@ -18,16 +18,17 @@ let experimentConfig = {
     ['Managing emotions', 'Learning the fatigue'],
     ['Social skills', 'Learning unuseless'],
   ],  // Each pair is [correctWord, distractorWord]; one pair is chosen at random per check
-  screensBetweenAttentionChecks: 60,  // Number of main (forced-choice) trials between attention checks
+  screensBetweenAttentionChecks: 50,  // Number of main (forced-choice) trials between attention checks
 };
 
 // OSF and server configuration
 const osfNodeId = "dcv5z";
 
 // Prolific completion URL with placeholder for the completion code
-const PROLIFIC_COMPLETION_URL = "https://app.prolific.co/submissions/complete?cc=";
-const COMPLETION_CODE = "C1NWOX09";
-const NO_CONSENT_CODE = "C1O763HF";
+const PROLIFIC_COMPLETION_URL = "https://app.prolific.com/submissions/complete?cc=";
+const COMPLETION_CODE          = "C1NWOX09";  // Completed normally
+const NO_CONSENT_CODE          = "C1O763HF";  // Did not consent
+const FAILED_ATTENTION_CODE    = "CNI9G3A4";  // Failed an attention check
 
 // Get Prolific ID from URL parameters
 let prolificID = '';
@@ -676,6 +677,10 @@ function createAttentionCheckTrial(pair, overallIndex, totalTrials) {
       data.chosen_word = data.response === 0 ? leftWord : rightWord;
       data.passed = passed;
       data.response_time = data.rt;
+
+      if (!passed) {
+        endExperimentFailed();
+      }
     }
   };
 }
@@ -828,17 +833,26 @@ async function storeDataOnOSF(data) {
   }
 }
 
-// End experiment
-function endExperiment() {
+// Collect and save all valid data, then redirect to Prolific
+function saveAndRedirect(completionCode) {
   const experimentData = jsPsych.data.get().values();
   const validData = experimentData.filter(trial =>
     trial.task === 'forced_choice' || trial.task === 'attention_check' || trial.task === 'demographics'
   );
-
   storeDataOnOSF(validData)
     .then(() => console.log('Data stored successfully'))
     .catch(error => console.error('Error storing data:', error))
-    .finally(() => redirectToProlific(COMPLETION_CODE));
+    .finally(() => redirectToProlific(completionCode));
+}
+
+// End experiment normally (all attention checks passed)
+function endExperiment() {
+  saveAndRedirect(COMPLETION_CODE);
+}
+
+// End experiment immediately after a failed attention check
+function endExperimentFailed() {
+  saveAndRedirect(FAILED_ATTENTION_CODE);
 }
 
 // Main experiment function
