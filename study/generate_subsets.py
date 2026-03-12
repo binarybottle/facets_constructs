@@ -26,7 +26,7 @@ def load_items(csv_path):
     with open(csv_path, newline='', encoding='utf-8') as f:
         reader = csv.DictReader(f)
         for row in reader:
-            name = row.get('Items', '').strip()
+            name = row.get('Item', '').strip()
             if not name:
                 continue
             synonyms = [
