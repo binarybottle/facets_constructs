@@ -19,7 +19,7 @@ Usage:
     QC thresholds (configurable via CLI):
       --speed-threshold MS   Exclude participant if median RT < MS (default 500)
       --side-threshold X     Exclude participant if |left_ratio − 0.5| > X (default 0.2)
-      --rt-min MS            Drop trials with RT < MS (default 250)
+      --rt-min MS            Drop trials with RT < MS (default 300)
       --rt-max MS            Drop trials with RT > MS (default 30000)
       --rope-eps X           Equivalence bound for ROPE test (default 0.05)
 
@@ -269,7 +269,7 @@ def classical_mds(D: np.ndarray, k: int = 2):
 
 
 def apply_qc_filters(choices: pd.DataFrame, qc: pd.DataFrame,
-                     rt_min_ms: float = 250,
+                     rt_min_ms: float = 300,
                      rt_max_ms: float = 30_000) -> pd.DataFrame:
     """Exclude flagged participants (flag_speed OR flag_side) and out-of-range trials."""
     bad_pids = set(qc.loc[qc["flag_speed"] | qc["flag_side"], "user_id"])
@@ -391,6 +391,11 @@ def bradley_terry_analysis(choices: pd.DataFrame, out: Path):
     hdi_bounds   = az.hdi(worth_samples, hdi_prob=0.94)
     hdi_lo, hdi_hi = hdi_bounds[:, 0], hdi_bounds[:, 1]
 
+    alpha_median  = np.median(alpha_flat, axis=0)
+    alpha_hdi_arr = az.hdi(alpha_flat, hdi_prob=0.94)   # (n, 2)
+    alpha_hdi_lo  = alpha_hdi_arr[:, 0]
+    alpha_hdi_hi  = alpha_hdi_arr[:, 1]
+
     rank_samples = np.argsort(np.argsort(-worth_samples, axis=1), axis=1)
     rank_hdi_arr = az.hdi(rank_samples.astype(float), hdi_prob=0.94)
     rank_median  = np.median(rank_samples, axis=0).astype(int)
@@ -413,6 +418,9 @@ def bradley_terry_analysis(choices: pd.DataFrame, out: Path):
         "rank", "construct", "bt_worth_median", "hdi94_lo", "hdi94_hi",
         "rank_median", "rank_hdi94_lo", "rank_hdi94_hi", "construct_id",
     ])
+    df_rank["alpha_median"]   = [round(float(alpha_median[j]),  5) for j in order]
+    df_rank["alpha_hdi94_lo"] = [round(float(alpha_hdi_lo[j]),  5) for j in order]
+    df_rank["alpha_hdi94_hi"] = [round(float(alpha_hdi_hi[j]),  5) for j in order]
     df_rank.to_csv(out / "2_bt_rankings.csv", index=False)
 
     # ── Plot 2a: ranked bar chart + HDI ──
@@ -472,10 +480,12 @@ def bradley_terry_analysis(choices: pd.DataFrame, out: Path):
     fig.savefig(p, bbox_inches="tight");  plt.close(fig)
     print(f"  → {p}")
 
-    # ── Plot 2d: posterior predictive check (marginal, kappa integrated out) ──
-    # P_pred(i>j) = mean_s sigmoid(alpha_s[i] - alpha_s[j])  (typical participant)
-    pairs_i_ppc, pairs_j_ppc = [], []
-    obs_rate_ppc = []
+    # ── Plot 2d: posterior predictive check (full model, kappa marginalised) ──
+    # For each pair (i,j) and posterior sample s:
+    #   p_pred_s = mean_p sigmoid(kappa_p_s * (alpha_s[i] - alpha_s[j]))
+    # This faithfully reflects the full model likelihood, including participant-
+    # level discriminability variability, by averaging over all participants.
+    pairs_i_ppc, pairs_j_ppc, obs_rate_ppc = [], [], []
     for i in range(n):
         for j in range(i + 1, n):
             total = int(W[i, j] + W[j, i])
@@ -487,11 +497,17 @@ def bradley_terry_analysis(choices: pd.DataFrame, out: Path):
     pairs_j_ppc  = np.array(pairs_j_ppc)
     obs_rate_ppc = np.array(obs_rate_ppc)
 
-    diff        = alpha_flat[:, pairs_i_ppc] - alpha_flat[:, pairs_j_ppc]  # (S, n_pairs)
-    p_pred_ppc  = 1.0 / (1.0 + np.exp(-diff))
-    ppc_mean    = p_pred_ppc.mean(axis=0)
-    ppc_lo      = np.percentile(p_pred_ppc,  3, axis=0)
-    ppc_hi      = np.percentile(p_pred_ppc, 97, axis=0)
+    kappa_flat = idata.posterior["kappa"].values.reshape(-1, n_participants)  # (S, P)
+    ppc_mean   = np.empty(len(pairs_i_ppc))
+    ppc_lo     = np.empty(len(pairs_i_ppc))
+    ppc_hi     = np.empty(len(pairs_i_ppc))
+    for k, (pi, pj) in enumerate(zip(pairs_i_ppc, pairs_j_ppc)):
+        diff_s       = alpha_flat[:, pi] - alpha_flat[:, pj]   # (S,)
+        logits       = kappa_flat * diff_s[:, None]             # (S, P)
+        p_per_sample = 1.0 / (1.0 + np.exp(-logits)).mean(axis=1)  # (S,)
+        ppc_mean[k]  = p_per_sample.mean()
+        ppc_lo[k]    = np.percentile(p_per_sample,  3)
+        ppc_hi[k]    = np.percentile(p_per_sample, 97)
 
     fig, ax = plt.subplots(figsize=(6, 6))
     ax.errorbar(obs_rate_ppc, ppc_mean,
@@ -501,14 +517,15 @@ def bradley_terry_analysis(choices: pd.DataFrame, out: Path):
     ax.plot([0, 1], [0, 1], "k--", linewidth=1)
     ax.set_xlabel("Observed win rate")
     ax.set_ylabel("Posterior predictive win rate  (mean ± 94% interval)")
-    ax.set_title("Posterior predictive check: per-pair win rates")
+    ax.set_title("Posterior predictive check: per-pair win rates\n"
+                 "(predictions marginalised over participant discriminability)")
     ax.set_xlim(-0.05, 1.05);  ax.set_ylim(-0.05, 1.05)
     plt.tight_layout()
     p = out / "2d_bt_ppc.png"
     fig.savefig(p, bbox_inches="tight");  plt.close(fig)
     print(f"  → {p}")
 
-    return worth_median, worth_samples, labels, W, ids, idx_of, order
+    return worth_median, worth_samples, alpha_median, labels, W, ids, idx_of, order
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -516,6 +533,7 @@ def bradley_terry_analysis(choices: pd.DataFrame, out: Path):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def construct_dependence(worth_samples: np.ndarray, worth_median: np.ndarray,
+                         alpha_median: np.ndarray,
                          labels: list, W: np.ndarray, ids, idx_of,
                          out: Path, rope_eps: float = ROPE_EPS_DEFAULT):
     print("\n=== 3. Construct Dependence ===")
@@ -531,7 +549,7 @@ def construct_dependence(worth_samples: np.ndarray, worth_median: np.ndarray,
             total = W[i, j] + W[j, i]
             if total > 0:
                 P_obs[i, j]  = W[i, j] / total
-                P_pred[i, j] = worth_median[i] / (worth_median[i] + worth_median[j])
+                P_pred[i, j] = 1.0 / (1.0 + np.exp(-(alpha_median[i] - alpha_median[j])))
     residuals = P_obs - P_pred
 
     dep = np.full((n, n), np.nan)
@@ -614,7 +632,7 @@ def construct_dependence(worth_samples: np.ndarray, worth_median: np.ndarray,
     for i in range(n):
         for j in range(i + 1, n):
             total = int(W[i, j] + W[j, i])
-            if total < 10:
+            if total < 20:
                 continue
             p_ij      = worth_samples[:, i] / (worth_samples[:, i] + worth_samples[:, j])
             rope_prob = float(np.mean(np.abs(p_ij - 0.5) < rope_eps))
@@ -784,8 +802,8 @@ def main():
                         help="Exclude participant if median RT < MS (default 500)")
     parser.add_argument("--side-threshold",  type=float, default=0.2,  metavar="X",
                         help="Exclude participant if |left_ratio − 0.5| > X (default 0.2)")
-    parser.add_argument("--rt-min", type=float, default=250,    metavar="MS",
-                        help="Drop trials with RT < MS (default 250)")
+    parser.add_argument("--rt-min", type=float, default=300,    metavar="MS",
+                        help="Drop trials with RT < MS (default 300)")
     parser.add_argument("--rt-max", type=float, default=30_000, metavar="MS",
                         help="Drop trials with RT > MS (default 30000)")
     parser.add_argument("--rope-eps", type=float, default=ROPE_EPS_DEFAULT, metavar="X",
@@ -839,11 +857,11 @@ def main():
         return
 
     # 2. BT (with participant random effects)
-    worth_median, worth_samples, labels, W, ids, idx_of, order = \
+    worth_median, worth_samples, alpha_median, labels, W, ids, idx_of, order = \
         bradley_terry_analysis(choices_clean, out_dir)
 
     # 3. Dependence + ROPE
-    construct_dependence(worth_samples, worth_median, labels, W, ids, idx_of,
+    construct_dependence(worth_samples, worth_median, alpha_median, labels, W, ids, idx_of,
                          out_dir, rope_eps=args.rope_eps)
 
     # 4. Synonym DIF

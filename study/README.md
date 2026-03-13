@@ -90,7 +90,7 @@ Per-participant metrics: median RT and left/right selection ratio. Two exclusion
 | `flag_speed` | median RT < 500 ms | Speed-clicking |
 | `flag_side` | \|left\_ratio − 0.5\| > 0.2 | >70% / <30% same side |
 
-Participants with `flag_speed=True` or `flag_side=True` are excluded from all downstream analyses. Individual trials with RT < 250 ms or > 30 s are also dropped. All thresholds are adjustable via CLI flags (`--speed-threshold`, `--side-threshold`, `--rt-min`, `--rt-max`).
+Participants with `flag_speed=True` or `flag_side=True` are excluded from all downstream analyses. Individual trials with RT < 300 ms or > 30 s are also dropped (300 ms is the practical lower bound for reading two multi-syllabic words and making a deliberate click). All thresholds are adjustable via CLI flags (`--speed-threshold`, `--side-threshold`, `--rt-min`, `--rt-max`).
 
 Attention check results (counts of checks passed/failed) are recorded in the QC table for transparency, but not used as an exclusion criterion — participants who fail an attention check are terminated by the experiment before completing the session and therefore do not appear in the analysis dataset.
 
@@ -103,33 +103,33 @@ The Bradley-Terry (BT) model estimates a latent "worth" parameter for each const
 - **Construct worth**: `alpha ~ ZeroSumNormal(σ=1.5)` on the log-worth scale — weakly informative shrinkage, identifiable without fixing an anchor.
 - **Participant discriminability** (non-centred log-normal): `sigma_kappa ~ HalfNormal(0.5)`, `kappa_offset[p] ~ Normal(0,1)`, `kappa[p] = exp(kappa_offset[p] * sigma_kappa)`.
 - **Likelihood**: one Bernoulli per trial — `P(i chosen | p) = sigmoid(kappa[p] * (alpha[i] − alpha[j]))`.
-- **Posterior summary**: posterior median worth (softmax-normalised) + 94% HDI per construct, plus rank median and 94% rank HDI.
+- **Posterior summary**: posterior median worth (softmax-normalised) + 94% HDI per construct, plus rank median and 94% rank HDI. The raw log-worth `alpha` (median and 94% HDI) is also saved for downstream modelling (log-odds differences have a direct interpretation that worth ratios do not).
 - **Convergence**: R-hat and ESS checked automatically; warning if R-hat > 1.01. `sigma_kappa` reported to characterise between-participant variability in discriminability.
 
 Four plots are produced:
 - **2a**: Ranked bar chart with 94% HDI error bars
 - **2b**: Posterior rank distribution heatmap — `P(rank = k | data)` per construct
 - **2c**: Pairwise dominance matrix — `P(worth_i > worth_j | data)` for all construct pairs
-- **2d**: Posterior predictive check — observed vs. marginal model-predicted win rates per pair
+- **2d**: Posterior predictive check — observed vs. predicted win rates, with predictions marginalised over participant discriminability by averaging `sigmoid(kappa_p * (α_i − α_j))` over participants for each posterior sample
 
-**Outputs**: `2_bt_rankings.csv` (columns: `rank`, `construct`, `bt_worth_median`, `hdi94_lo`, `hdi94_hi`, `rank_median`, `rank_hdi94_lo`, `rank_hdi94_hi`, `construct_id`), `2a_bt_rankings.png`, `2b_bt_rank_distributions.png`, `2c_bt_dominance.png`, `2d_bt_ppc.png`
+**Outputs**: `2_bt_rankings.csv` (columns: `rank`, `construct`, `bt_worth_median`, `hdi94_lo`, `hdi94_hi`, `rank_median`, `rank_hdi94_lo`, `rank_hdi94_hi`, `construct_id`, `alpha_median`, `alpha_hdi94_lo`, `alpha_hdi94_hi`), `2a_bt_rankings.png`, `2b_bt_rank_distributions.png`, `2c_bt_dominance.png`, `2d_bt_ppc.png`
 
 Key fields used: `chosen_construct_id`, `unchosen_construct_id`, `user_id`.
 
 ### 3. Construct dependence — residual correlation, clustering, MDS, and ROPE
 
-After fitting the BT model, the residual matrix (observed − BT-predicted win probabilities) is computed. Spearman correlation between each pair of constructs' residual vectors is used as a dependence measure (more robust than Pearson for sparse pairwise data). Constructs with fewer than 3 non-NaN correlations are excluded from clustering and MDS but shown as gray in the heatmap.
+After fitting the BT model, the residual matrix (observed − BT-predicted win probabilities) is computed. The predicted win probability for each pair uses `sigmoid(α_i − α_j)` at the posterior median of the construct log-worth parameters, marginalising out participant discriminability (κ=1). This is a deliberate simplification: the goal is to detect construct-level systematic deviations from the BT ordering, and including κ would conflate judge-level variability with construct dependence. Spearman correlation between each pair of constructs' residual vectors is used as a dependence measure (more robust than Pearson for sparse pairwise data). Constructs with fewer than 3 non-NaN correlations are excluded from clustering and MDS but shown as gray in the heatmap.
 
 Three complementary outputs:
 - **Heatmap**: full residual Spearman correlation matrix (gray = no shared data)
 - **Dendrogram**: hierarchical clustering (average linkage) of well-connected constructs
 - **MDS map**: 2-D projection of construct neighbourhoods, with the percentage of total variance explained by the two dimensions shown in the title
 
-A **Bayesian ROPE equivalence test** identifies construct pairs that are practically interchangeable: pairs where `P(|P(i beats j | data) − 0.5| < ε) ≥ 0.95`, using ε = 0.05 by default (configurable via `--rope-eps`). This is a direct test of interchangeability using the full BT posterior.
+A **Bayesian ROPE equivalence test** identifies construct pairs that are practically interchangeable: pairs where `P(|P(i beats j | data) − 0.5| < ε) ≥ 0.95`, using ε = 0.05 by default (configurable via `--rope-eps`). Only pairs with ≥ 20 observed comparisons are tested (equivalence claims require more data than difference tests). The win probability is computed as `worth_i / (worth_i + worth_j)` from the posterior worth samples, which is equivalent to `sigmoid(α_i − α_j)` and therefore also marginalises out κ — it tests whether the constructs' underlying importance is interchangeable, not whether a typical participant would choose them at chance.
 
 A **binomial test** (secondary check) additionally flags construct pairs whose observed head-to-head win proportion does not significantly differ from 0.5 (p > 0.10).
 
-**Outputs**: `3_dependence_matrix.csv`, `3_construct_dependence.png`, `3_rope_equivalence.csv` (if any pairs meet the ROPE threshold)
+**Outputs**: `3_dependence_matrix.csv` (n×n Spearman residual correlation matrix; construct names as both row and column headers), `3_construct_dependence.png`, `3_rope_equivalence.csv` (columns: `construct_a`, `construct_b`, `n_comparisons`, `obs_win_rate_a`, `rope_prob`; only written if any pairs meet the ROPE threshold)
 
 ### 4. Synonym validity — hierarchical Bayesian DIF model
 
