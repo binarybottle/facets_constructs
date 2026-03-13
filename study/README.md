@@ -68,46 +68,86 @@ Before the main task, participants answer six background questions:
 
 - **Target N**: ~300 K-12 teachers with English as primary language, recruited via Prolific
 - **Subset coverage**: With 400 pre-generated balanced subsets, each construct appears in ~115 sessions and each cross-construct pair is observed by ~32 independent judges on average
-- **Cost estimate**: ~$12/hr × ~0.4 hr × 300 = ~$1,440 + Prolific fees
 
 ---
 
 ## Analysis Plan
 
-### 1. Importance ranking — Bradley-Terry model
+Run the analysis from the `study/` directory:
 
-The Bradley-Terry (BT) model estimates a latent "worth" parameter for each of the 90 constructs from the pairwise choice data. Because each participant completes a complete within-subset design (all C(26,2) pairs for their 26 assigned constructs), the comparison graph across participants is well-connected, enabling stable BT estimation even with an incomplete cross-participant design.
+```bash
+python3 analyze.py [--data output] [--out analysis] [OPTIONS]
+```
 
-**Output**: Ranked list of 90 constructs by teacher-perceived importance, with confidence intervals on BT worth parameters.
+All QC thresholds are configurable; see `python3 analyze.py --help`. Outputs are written to `analysis/`.
 
-Key fields used: `chosen_construct_id`, `unchosen_construct_id`, `subset_index`.
+### 1. Participant QC
 
-### 2. Construct dependence — residual covariance clustering
+Per-participant metrics: median RT and left/right selection ratio. Two exclusion flags are computed:
 
-After fitting the BT model, examine the matrix of residuals (observed − expected win probabilities). Constructs that the model consistently fails to order (high residual covariance between two constructs' opponent profiles) are candidates for measuring overlapping or interchangeable concepts.
+| Flag | Default threshold | Meaning |
+|---|---|---|
+| `flag_speed` | median RT < 500 ms | Speed-clicking |
+| `flag_side` | \|left\_ratio − 0.5\| > 0.2 | >70% / <30% same side |
 
-**Approach**: Cluster constructs by their residual covariance profiles (hierarchical clustering or spectral methods). Items with high within-cluster residual covariance may warrant merging or further disambiguation.
+Participants with `flag_speed=True` or `flag_side=True` are excluded from all downstream analyses. Individual trials with RT < 250 ms or > 30 s are also dropped. All thresholds are adjustable via CLI flags (`--speed-threshold`, `--side-threshold`, `--rt-min`, `--rt-max`).
 
-**Output**: Dependence matrix; candidate construct clusters.
+Attention check results (counts of checks passed/failed) are recorded in the QC table for transparency, but not used as an exclusion criterion — participants who fail an attention check are terminated by the experiment before completing the session and therefore do not appear in the analysis dataset.
 
-### 3. Construct validity — synonym win-rate correlation
+**Outputs**: `1_participant_qc.csv`, `1_participant_qc.png`
 
-Because each construct is represented by either its canonical label or a synonym across different participants, we can compare the construct's performance profile under each label.
+### 2. Importance ranking — Bayesian Bradley-Terry model
 
-For each canonical item with at least one synonym tested:
-- Collect the win-rate vector of the canonical term against all opponents it faced (across all participants assigned that term)
-- Collect the win-rate vector of the synonym against all opponents it faced
-- Compute the correlation between the two vectors
+The Bradley-Terry (BT) model estimates a latent "worth" parameter for each construct from the pairwise choice data, fit via NUTS sampling (PyMC). A participant **discriminability** (scaling) random effect accounts for the fact that some judges make sharper distinctions than others:
 
-**Interpretation**:
-- **High correlation** → the synonym captures the same construct (good validity)
-- **Low correlation** → the synonym evokes a different concept (poor validity; consider relabeling)
+- **Construct worth**: `alpha ~ ZeroSumNormal(σ=1.5)` on the log-worth scale — weakly informative shrinkage, identifiable without fixing an anchor.
+- **Participant discriminability** (non-centred log-normal): `sigma_kappa ~ HalfNormal(0.5)`, `kappa_offset[p] ~ Normal(0,1)`, `kappa[p] = exp(kappa_offset[p] * sigma_kappa)`.
+- **Likelihood**: one Bernoulli per trial — `P(i chosen | p) = sigmoid(kappa[p] * (alpha[i] − alpha[j]))`.
+- **Posterior summary**: posterior median worth (softmax-normalised) + 94% HDI per construct, plus rank median and 94% rank HDI.
+- **Convergence**: R-hat and ESS checked automatically; warning if R-hat > 1.01. `sigma_kappa` reported to characterise between-participant variability in discriminability.
 
-Additionally, a likelihood ratio test can compare a BT model that constrains a canonical item and its synonym to equal worth parameters against an unconstrained model.
+Four plots are produced:
+- **2a**: Ranked bar chart with 94% HDI error bars
+- **2b**: Posterior rank distribution heatmap — `P(rank = k | data)` per construct
+- **2c**: Pairwise dominance matrix — `P(worth_i > worth_j | data)` for all construct pairs
+- **2d**: Posterior predictive check — observed vs. marginal model-predicted win rates per pair
 
-**Output**: Validity coefficient (Pearson r of win-rate vectors) per canonical–synonym pair; LRT p-values.
+**Outputs**: `2_bt_rankings.csv` (columns: `rank`, `construct`, `bt_worth_median`, `hdi94_lo`, `hdi94_hi`, `rank_median`, `rank_hdi94_lo`, `rank_hdi94_hi`, `construct_id`), `2a_bt_rankings.png`, `2b_bt_rank_distributions.png`, `2c_bt_dominance.png`, `2d_bt_ppc.png`
 
-Key fields used: `chosen_canonical`, `chosen_is_synonym`, `unchosen_canonical`, `unchosen_is_synonym`.
+Key fields used: `chosen_construct_id`, `unchosen_construct_id`, `user_id`.
+
+### 3. Construct dependence — residual correlation, clustering, MDS, and ROPE
+
+After fitting the BT model, the residual matrix (observed − BT-predicted win probabilities) is computed. Spearman correlation between each pair of constructs' residual vectors is used as a dependence measure (more robust than Pearson for sparse pairwise data). Constructs with fewer than 3 non-NaN correlations are excluded from clustering and MDS but shown as gray in the heatmap.
+
+Three complementary outputs:
+- **Heatmap**: full residual Spearman correlation matrix (gray = no shared data)
+- **Dendrogram**: hierarchical clustering (average linkage) of well-connected constructs
+- **MDS map**: 2-D projection of construct neighbourhoods, with the percentage of total variance explained by the two dimensions shown in the title
+
+A **Bayesian ROPE equivalence test** identifies construct pairs that are practically interchangeable: pairs where `P(|P(i beats j | data) − 0.5| < ε) ≥ 0.95`, using ε = 0.05 by default (configurable via `--rope-eps`). This is a direct test of interchangeability using the full BT posterior.
+
+A **binomial test** (secondary check) additionally flags construct pairs whose observed head-to-head win proportion does not significantly differ from 0.5 (p > 0.10).
+
+**Outputs**: `3_dependence_matrix.csv`, `3_construct_dependence.png`, `3_rope_equivalence.csv` (if any pairs meet the ROPE threshold)
+
+### 4. Synonym validity — hierarchical Bayesian DIF model
+
+To test whether synonym labels change the perceived importance of a construct (Differential Item Functioning), a hierarchical BT model is fit at the term level. Observations are aggregated to unique term-pair counts (Binomial) for efficiency:
+
+```
+alpha_construct[c] ~ ZeroSumNormal(σ=1.5)   [construct log-worth]
+sigma_dif          ~ HalfNormal(σ=0.5)       [global scale of label effects]
+delta_syn[s]       ~ Normal(0, sigma_dif)    [synonym DIF offset vs. canonical]
+alpha_term[t]      = alpha_construct[c(t)] + delta_syn[s(t)]   (0 for canonical)
+wins_ij            ~ Binomial(total_ij, sigmoid(alpha_term[i] − alpha_term[j]))
+```
+
+A synonym with `|delta|` significantly different from 0 (94% HDI excludes 0) indicates the label itself shifts perceived importance beyond the underlying construct. `sigma_dif` (median and 94% HDI reported) summarises the global magnitude of label effects.
+
+**Outputs**: `4_synonym_dif.csv` (columns: `construct_id`, `canonical`, `synonym_term`, `delta_median`, `hdi94_lo`, `hdi94_hi`, `sig_dif`), `4_synonym_dif.png`
+
+Key fields used: `chosen_term`, `unchosen_term`, `chosen_is_synonym`, `unchosen_is_synonym`.
 
 ---
 
@@ -178,6 +218,10 @@ study/
 ├── src/
 │   ├── experiment.js        # Main experiment code (jsPsych)
 │   └── style.css
+├── output/                  # Raw per-participant CSV files (gitignored)
+├── analysis/                # Analysis outputs: plots and CSV tables (gitignored)
+├── analyze.py               # Analysis script (QC, Bayesian BT model, dependence, synonym validity)
+├── requirements.txt         # Python dependencies for analyze.py
 ├── generate_subsets.py      # Generates data/subsets.json
 ├── index.html
 ├── vite.config.js

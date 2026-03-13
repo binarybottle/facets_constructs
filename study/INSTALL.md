@@ -3,8 +3,26 @@
 ## Prerequisites
 
 - Node.js >= 18.x (on your local machine only)
+- Python >= 3.10 (for analysis script only)
 
-## Local Development
+## Analysis Script Setup
+
+Install Python dependencies for `analyze.py`:
+
+```bash
+cd facets_constructs/study
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Then run the analysis (from within the activated venv, or prefix with `.venv/bin/python3`):
+
+```bash
+python3 analyze.py [--data output] [--out analysis]
+```
+
+## Local Development (experiment UI)
 
 ```bash
 git clone git@github.com:binarybottle/facets_constructs.git

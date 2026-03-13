@@ -1,0 +1,117 @@
+construct_id,canonical,synonym_term,delta_median,hdi94_lo,hdi94_hi,sig_dif
+32,Mood,Emotional state,4.4348,2.959,5.8005,True
+69,Initiative,Proactive,3.4488,1.9339,5.0218,True
+38,Learning new things,Skill development,3.0262,1.4053,4.6529,True
+88,Academic performance,Educational outcomes,2.95,1.6083,4.3595,True
+34,Managing thoughts,Cognitive control,2.7118,1.639,3.7145,True
+32,Mood,Emotional disposition,2.3284,0.9772,3.6568,True
+41,Memory,Recalling information,2.0354,0.6947,3.2597,True
+42,Planning,Strategic preparation,2.0172,1.0451,2.9512,True
+11,Relationships with teachers,Interactions with instructors,2.0114,0.85,3.2932,True
+66,Responsibility,Accountability,1.9212,0.5839,3.2457,True
+51,Knowledge and skills,Proficiencies,1.64,-0.6846,4.0042,False
+37,Problem solving,Overcoming obstacles,1.6119,-0.3851,3.5722,False
+12,Social cooperation,Collaboration with others,1.594,0.4619,2.9062,True
+48,Thinking speed,Rate of thought processing,1.5795,-0.7219,3.773,False
+18,Sexual behavior,Gender expression,1.3661,0.1831,2.5759,True
+84,Emotional well-being,Mental health,1.3523,0.2202,2.3813,True
+88,Academic performance,Scholastic achievement,1.3496,0.1037,2.4982,True
+13,Comfort in social situations,Confidence in groups,1.279,-0.5975,3.0999,False
+47,Task completion,Accomplishing work,1.1655,-1.1409,3.3522,False
+21,Sense of safety,Personal security,1.092,-0.0434,2.3626,False
+75,Self-control,Willpower,1.0546,-0.877,2.9555,False
+24,Managing conflict,Handling disagreements,1.0199,-0.9605,2.8458,False
+58,Openness,Open mindset,1.0051,-0.2522,2.276,False
+34,Managing thoughts,Mental regulation,0.9587,-0.0774,1.9718,False
+84,Emotional well-being,Psychological balance,0.7709,-0.2644,1.757,False
+15,Social activity,Group interaction,0.7606,-1.2333,2.7415,False
+22,Response to peer pressure,Reaction to group influence,0.7591,-1.2433,2.6124,False
+16,Social awareness,Interpersonal understanding,0.6396,-0.3327,1.626,False
+65,Integrity and honesty,Moral,0.6158,-1.6479,2.8125,False
+27,Resourcefulness,Use of environment,0.5946,-0.5046,1.7486,False
+30,Emotional expression,Displaying feelings,0.5594,-1.3994,2.3754,False
+80,Self-confidence,Belief in oneself,0.5494,-1.2529,2.4552,False
+7,Perception,Situational awareness,0.5226,-1.2192,2.4884,False
+89,Class participation,Student engagement,0.5006,-0.6263,1.6086,False
+62,Patience,Ability to wait,0.4042,-1.4082,2.2183,False
+12,Social cooperation,Teamwork,0.2758,-0.9011,1.4552,False
+25,Coping skills,Navigating difficulties,0.2023,-1.9284,2.4818,False
+69,Initiative,Self-starting,0.1928,-0.8301,1.2479,False
+52,Reading,Understanding text,0.165,-1.3174,1.5385,False
+31,Emotional awareness,Recognition of feelings,0.1566,-1.7087,2.0953,False
+9,Relationships with peers,Connections to friends,0.1457,-1.7856,2.0522,False
+40,Attention,Concentration,0.1311,-0.9428,1.2107,False
+78,Self-reflection,Introspection,0.0835,-1.7874,2.0079,False
+80,Self-confidence,Trust in oneself,0.0417,-1.9081,1.8688,False
+63,Helpfulness,Supportive,-0.0547,-1.2383,1.1033,False
+64,Kindness and caring,Compassion,-0.1021,-2.3541,2.0501,False
+79,Self-acceptance,Self-kindness,-0.1732,-1.3553,1.008,False
+67,Work habits,Industriousness,-0.2573,-2.4554,1.9941,False
+39,Learning from feedback and mistakes,Response to criticism,-0.2675,-2.4959,1.8149,False
+7,Perception,Observation,-0.2739,-2.1909,1.5691,False
+9,Relationships with peers,Social connections,-0.2791,-2.1699,1.6044,False
+72,Future outlook,Prospective view,-0.2838,-1.3108,0.7398,False
+0,Managing behavior,Regulating conduct,-0.2916,-1.503,0.9453,False
+77,Self-monitoring,Personal observation,-0.3938,-1.3971,0.6647,False
+2,Receptive communication,Inbound communication,-0.4121,-1.5249,0.6278,False
+4,Asking questions,Requesting information,-0.4167,-1.5209,0.6497,False
+1,Expressive communication,Messaging,-0.4285,-2.6447,1.811,False
+46,Task initiation,Starting projects,-0.4293,-1.326,0.4645,False
+86,Stress management,Managing worries,-0.4562,-2.6358,1.7787,False
+20,Social belonging,Feeling accepted,-0.4614,-2.5118,1.4576,False
+60,Fairness,Justice,-0.4705,-1.7619,0.9003,False
+61,Politeness,Courteous,-0.5883,-1.8791,0.6495,False
+82,Self-care / hygiene,Personal appearance,-0.6496,-2.8076,1.5359,False
+22,Response to peer pressure,Social conformity,-0.6819,-2.4876,1.2401,False
+28,Resilience,Recovery capacity,-0.69,-1.7438,0.3881,False
+41,Memory,Retaining information,-0.7871,-2.1558,0.4357,False
+30,Emotional expression,Showing feelings,-0.8087,-2.7999,1.0195,False
+31,Emotional awareness,Mood perception,-0.8435,-2.8189,1.0242,False
+29,Managing emotions,Regulating feelings,-0.9095,-2.0669,0.1583,False
+19,Play,Imaginative activity,-0.9276,-2.1127,0.1935,False
+85,Sleep and fatigue,Drowsiness,-0.9695,-2.0399,0.0609,False
+61,Politeness,Respectful,-1.0251,-2.0939,0.105,False
+15,Social activity,Interpersonal participation,-1.0824,-3.0419,0.9341,False
+63,Helpfulness,Assisting others,-1.09,-2.124,0.0438,False
+62,Patience,Frustration tolerance,-1.1277,-3.0698,0.6925,False
+3,Seeking help,Requesting assistance,-1.2007,-2.3479,-0.0442,True
+50,Creativity and imagination,Innovative thoughts,-1.2578,-2.443,-0.0448,True
+13,Comfort in social situations,Interpersonal ease,-1.2687,-3.1762,0.568,False
+20,Social belonging,Social validation,-1.3735,-3.3693,0.6126,False
+87,Substance use,Drug intake,-1.407,-3.5854,0.6995,False
+24,Managing conflict,Resolving disputes,-1.4377,-3.5239,0.4101,False
+78,Self-reflection,Looking inward,-1.4593,-3.4451,0.5826,False
+29,Managing emotions,Controlling feelings,-1.4765,-2.6831,-0.3728,True
+23,Bullying,Intimidation,-1.496,-2.9121,-0.0452,True
+55,Leadership,Exercizing authority,-1.4966,-3.8098,0.6952,False
+28,Resilience,Psychological toughness,-1.5195,-2.6543,-0.5028,True
+72,Future outlook,Expectations,-1.5356,-2.7987,-0.3747,True
+81,Self-advocacy,Standing up for oneself,-1.5387,-2.7753,-0.3198,True
+53,Writing,Penmanship,-1.5476,-3.8258,0.6669,False
+66,Responsibility,Sense of duty,-1.5671,-3.048,-0.138,True
+52,Reading,Text comprehension,-1.6548,-2.8256,-0.5335,True
+42,Planning,Goal mapping,-1.6752,-2.8532,-0.5375,True
+54,Motivation,Drive or ambition,-1.6886,-2.5363,-0.8224,True
+49,Abstract thinking,Symbolic processing,-1.7288,-3.9746,0.6533,False
+37,Problem solving,Troubleshooting,-1.736,-3.6617,0.2905,False
+45,Setting and striving for goals,Working for outcomes,-1.8117,-3.124,-0.5571,True
+19,Play,Recreation,-1.8169,-2.861,-0.7552,True
+89,Class participation,Classroom contribution,-1.8991,-3.1572,-0.6659,True
+81,Self-advocacy,Individual championing,-1.9199,-3.2046,-0.6689,True
+50,Creativity and imagination,Ingenuity,-1.9433,-2.9215,-0.935,True
+87,Substance use,Drug consumption,-1.961,-4.1357,0.366,False
+74,Effort,Exertion,-1.9937,-4.3784,0.1949,False
+44,Time management,Schedule planning,-2.1353,-3.1684,-1.1437,True
+76,Self-awareness,Personal insight,-2.1761,-3.2676,-1.1111,True
+70,Assertiveness,Directness,-2.3019,-3.6228,-1.1143,True
+68,Independence,Self-reliance,-2.3452,-3.5035,-1.2387,True
+46,Task initiation,Launching activities,-2.3519,-3.4982,-1.2236,True
+75,Self-control,Restraint,-2.3842,-4.3654,-0.4748,True
+59,Respect for others,Accepting diversity,-2.403,-3.6773,-1.2198,True
+76,Self-awareness,Inner understanding,-2.4943,-3.5967,-1.4659,True
+27,Resourcefulness,Finding solutions in one's surroundings,-2.6732,-3.8475,-1.551,True
+85,Sleep and fatigue,Exhaustion,-2.9388,-3.8659,-2.1149,True
+59,Respect for others,Cultural sensitivity,-3.2021,-4.6957,-1.8281,True
+54,Motivation,Personal incentive,-3.7981,-4.9915,-2.5929,True
+10,Relationships with parents,Family bonds,-3.9293,-5.515,-2.4602,True
+36,Decision-making,Choice selection,-5.1601,-6.7121,-3.7111,True

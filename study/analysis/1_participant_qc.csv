@@ -1,0 +1,11 @@
+user_id,n_trials,rt_median_s,rt_p5_s,rt_p95_s,left_ratio,n_attn_checks,n_attn_passed,attn_accuracy,flag_speed,flag_side,flag_attn
+5df77306c12a36506b5e95f4,325,1.67,1.02,3.76,0.551,5,5,1.0,False,False,False
+5f1bea7d46be2a4101756238,325,1.49,0.98,4.73,0.535,5,5,1.0,False,False,False
+611f222b87129e565f38fb31,325,3.12,1.55,17.0,0.505,5,5,1.0,False,False,False
+64c3c4822b7f1c2b20dff932,325,1.95,1.17,11.46,0.511,5,5,1.0,False,False,False
+65c1b23b2d7406c9c2b9f331,325,1.94,1.4,4.98,0.529,5,5,1.0,False,False,False
+66472a03650f9441b8f815d9,325,1.88,1.24,5.74,0.511,5,5,1.0,False,False,False
+664b5195ae42ba03b70189c6,325,2.7,1.13,13.42,0.483,5,5,1.0,False,False,False
+668d47c713ff36650d859118,325,1.7,1.03,5.59,0.526,5,5,1.0,False,False,False
+66952022eeb1290c2d6564f7,325,1.71,1.08,4.48,0.551,5,5,1.0,False,False,False
+66e7853b4e311a12f93b5411,325,1.86,0.94,9.76,0.446,5,5,1.0,False,False,False

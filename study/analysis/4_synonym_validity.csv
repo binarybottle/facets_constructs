@@ -1,0 +1,70 @@
+construct_id,canonical,synonym_term,n_shared_opps,n_obs_canonical,n_obs_synonym,pearson_r,p_value
+66,Responsibility,Sense of duty,8,8,8,0.745,0.0338
+63,Helpfulness,Supportive,5,5,5,0.667,0.2191
+12,Social cooperation,Collaboration with others,6,6,9,0.632,0.1778
+29,Managing emotions,Controlling feelings,11,11,12,0.516,0.1039
+79,Self-acceptance,Self-kindness,10,10,10,0.5,0.1411
+81,Self-advocacy,Individual championing,7,7,7,0.471,0.2856
+3,Seeking help,Requesting assistance,13,13,13,0.386,0.193
+77,Self-monitoring,Personal observation,13,13,15,0.354,0.2355
+11,Relationships with teachers,Interactions with instructors,20,30,20,0.352,0.1283
+69,Initiative,Self-starting,16,19,16,0.334,0.2059
+50,Creativity and imagination,Innovative thoughts,10,10,10,0.327,0.3559
+85,Sleep and fatigue,Exhaustion,33,41,51,0.326,0.0639
+88,Academic performance,Educational outcomes,6,6,6,0.316,0.5415
+27,Resourcefulness,Use of environment,13,16,13,0.307,0.3078
+0,Managing behavior,Regulating conduct,7,7,7,0.3,0.5133
+54,Motivation,Personal incentive,13,15,13,0.264,0.3837
+84,Emotional well-being,Psychological balance,14,14,16,0.258,0.3728
+45,Setting and striving for goals,Working for outcomes,16,16,20,0.258,0.3343
+76,Self-awareness,Inner understanding,19,26,19,0.207,0.3953
+70,Assertiveness,Directness,12,14,12,0.195,0.5429
+36,Decision-making,Choice selection,11,14,11,0.179,0.5987
+59,Respect for others,Accepting diversity,7,7,7,0.167,0.721
+89,Class participation,Student engagement,12,12,14,0.156,0.6279
+81,Self-advocacy,Standing up for oneself,11,11,11,0.149,0.6618
+23,Bullying,Intimidation,8,8,8,0.149,0.7246
+29,Managing emotions,Regulating feelings,12,12,14,0.146,0.6513
+54,Motivation,Drive or ambition,27,31,38,0.128,0.5256
+63,Helpfulness,Assisting others,14,14,15,0.101,0.7325
+19,Play,Recreation,10,10,13,0.066,0.8567
+28,Resilience,Psychological toughness,16,20,16,0.048,0.861
+84,Emotional well-being,Mental health,11,11,11,0.043,0.9
+28,Resilience,Recovery capacity,15,19,15,0.034,0.9049
+42,Planning,Strategic preparation,23,25,26,0.009,0.9665
+72,Future outlook,Expectations,6,6,6,0.0,1.0
+42,Planning,Goal mapping,15,18,15,-0.033,0.9066
+46,Task initiation,Starting projects,21,24,24,-0.036,0.8762
+2,Receptive communication,Inbound communication,16,16,21,-0.044,0.8703
+44,Time management,Schedule planning,19,19,30,-0.044,0.859
+4,Asking questions,Requesting information,12,14,12,-0.046,0.8878
+16,Social awareness,Interpersonal understanding,20,26,20,-0.065,0.7854
+40,Attention,Concentration,12,15,12,-0.066,0.8394
+68,Independence,Self-reliance,14,14,19,-0.069,0.8144
+76,Self-awareness,Personal insight,19,30,19,-0.076,0.7576
+27,Resourcefulness,Finding solutions in one's surroundings,13,16,13,-0.083,0.7867
+61,Politeness,Courteous,7,7,7,-0.091,0.8457
+50,Creativity and imagination,Ingenuity,15,15,22,-0.12,0.6714
+60,Fairness,Justice,17,17,21,-0.133,0.6099
+34,Managing thoughts,Cognitive control,15,15,20,-0.144,0.6093
+18,Sexual behavior,Gender expression,16,16,17,-0.149,0.5816
+61,Politeness,Respectful,8,8,10,-0.183,0.6652
+38,Learning new things,Skill development,12,12,14,-0.213,0.5059
+85,Sleep and fatigue,Drowsiness,9,11,9,-0.218,0.5727
+21,Sense of safety,Personal security,19,19,29,-0.234,0.334
+72,Future outlook,Prospective view,10,10,12,-0.244,0.497
+19,Play,Imaginative activity,6,6,6,-0.25,0.6328
+46,Task initiation,Launching activities,14,15,14,-0.284,0.3246
+58,Openness,Open mindset,7,7,7,-0.3,0.5133
+34,Managing thoughts,Mental regulation,10,10,10,-0.327,0.3559
+52,Reading,Text comprehension,11,11,14,-0.515,0.1046
+41,Memory,Retaining information,7,7,7,-0.548,0.2031
+89,Class participation,Classroom contribution,9,9,9,-0.598,0.0892
+59,Respect for others,Cultural sensitivity,6,6,6,-0.632,0.1778
+12,Social cooperation,Teamwork,9,9,9,-0.632,0.0676
+41,Memory,Recalling information,7,7,7,-0.645,0.1174
+10,Relationships with parents,Family bonds,8,8,8,,
+32,Mood,Emotional disposition,10,10,10,,
+52,Reading,Understanding text,9,9,9,,
+69,Initiative,Proactive,15,16,15,,
+88,Academic performance,Scholastic achievement,8,8,8,,
